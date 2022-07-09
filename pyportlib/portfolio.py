@@ -3,21 +3,22 @@ from typing import Union, List, Dict
 import numpy as np
 import pandas as pd
 
-from .services.cash_change import CashChange
-from .position import Position
-from .services.cash_manager import CashManager
-from .services.data_reader import DataReader
-from .services.fx_rates import FxRates
-from .services.position_tagging import PositionTagging
-from .services.transaction import Transaction
-from .services.transaction_manager import TransactionManager
-from .utils import dates_utils, logger, time_series
-from .utils.time_series import TimeSeriesInterface
+from pyportlib import create
+from pyportlib.services.cash_change import CashChange
+from pyportlib.position import Position
+from pyportlib.services.cash_manager import CashManager
+from pyportlib.services.data_reader import DataReader
+from pyportlib.services.fx_rates import FxRates
+from pyportlib.services.position_tagging import PositionTagging
+from pyportlib.services.transaction import Transaction
+from pyportlib.services.transaction_manager import TransactionManager
+from pyportlib.utils import dates_utils, logger, time_series
+from pyportlib.utils.time_series import TimeSeriesInterface
 
 
 class Portfolio(TimeSeriesInterface):
 
-    def __init__(self, account: str, currency: str):
+    def __init__(self, account: str, currency: str, datareader: DataReader):
         # attributes
         self.account = account
         self._positions = {}
@@ -27,10 +28,12 @@ class Portfolio(TimeSeriesInterface):
 
         # services
         self._cash_manager = CashManager(account=self.account)
-        self._datareader = DataReader()
+        self._datareader = datareader
         self._transaction_manager = TransactionManager(account=self.account)
         self._position_tags: PositionTagging
-        self._fx = FxRates(ptf_currency=currency, currencies=self._transaction_manager.get_currencies())
+        self._fx = FxRates(ptf_currency=currency,
+                           currencies=self._transaction_manager.get_currencies(),
+                           datareader=datareader)
 
         self.start_date = None
         # load data        
@@ -145,7 +148,9 @@ class Portfolio(TimeSeriesInterface):
 
         for ticker in tickers:
             currency = self._transaction_manager.get_currency(ticker=ticker)
-            pos = Position(ticker, local_currency=currency, tag=position_tags.get(ticker))
+            pos = create.position(ticker,
+                                  local_currency=currency,
+                                  tag=position_tags.get(ticker))
 
             if self.currency != pos.currency:
                 prices = pos.prices.multiply(self._fx.get(f"{pos.currency}{self.currency}"), fill_value=None).dropna()
@@ -197,7 +202,8 @@ class Portfolio(TimeSeriesInterface):
                 ok, new_cash = self._enough_funds(transaction=trx)
 
                 if not ok:
-                    logger.logging.error(f'{self.account}: transaction not added. not enough funds to perform this transaction, missing {-1 * new_cash} to complete')
+                    logger.logging.error(
+                        f'{self.account}: transaction not added. not enough funds to perform this transaction, missing {-1 * new_cash} to complete')
                 else:
                     if trx.type == "Split":
                         self._transaction_manager.add_split(transaction=trx)
@@ -299,7 +305,8 @@ class Portfolio(TimeSeriesInterface):
         else:
             return 0
 
-    def daily_total_pnl(self, start_date: datetime = None, end_date: datetime = None, positions_to_exclude: List[str] = None, tags: List[str] = None) -> pd.DataFrame:
+    def daily_total_pnl(self, start_date: datetime = None, end_date: datetime = None,
+                        positions_to_exclude: List[str] = None, tags: List[str] = None) -> pd.DataFrame:
         """
         Portfolio return per position in $ amount for specified date range
 
@@ -329,7 +336,8 @@ class Portfolio(TimeSeriesInterface):
         except KeyError:
             transactions = transactions.loc[transactions.index >= start_date]
 
-        pnl = self._pnl_pos_apply(positions_dict=positions_to_compute, start_date=start_date, end_date=end_date, transactions=transactions, fx=self._fx.rates)
+        pnl = self._pnl_pos_apply(positions_dict=positions_to_compute, start_date=start_date, end_date=end_date,
+                                  transactions=transactions, fx=self._fx.rates)
         return pnl
 
     def pct_daily_total_pnl(self, start_date: datetime = None, end_date: datetime = None, include_cash: bool = False,
@@ -350,14 +358,16 @@ class Portfolio(TimeSeriesInterface):
             start_date = end_date
 
         if positions_to_exclude is not None or tags is not None:
-            market_vals = self.compute_market_value(positions_to_exclude=positions_to_exclude, tags=tags).loc[start_date:end_date]
+            market_vals = self.compute_market_value(positions_to_exclude=positions_to_exclude, tags=tags).loc[
+                          start_date:end_date]
         else:
             market_vals = self.market_value.loc[start_date:end_date]
 
         if include_cash:
             market_vals += self._cash_history.loc[start_date:end_date]
 
-        pnl = self.daily_total_pnl(start_date, end_date, positions_to_exclude=positions_to_exclude, tags=tags).sum(axis=1).divide(market_vals)
+        pnl = self.daily_total_pnl(start_date, end_date, positions_to_exclude=positions_to_exclude, tags=tags).sum(
+            axis=1).divide(market_vals)
         pnl.replace([np.inf, -np.inf], np.nan, inplace=True)
         pnl = pnl.fillna(0)
         pnl.name = self.account
@@ -510,7 +520,8 @@ class Portfolio(TimeSeriesInterface):
         return value < live_cash, new_cash
 
     @staticmethod
-    def _pnl_pos_apply(positions_dict: dict, start_date: datetime, end_date: datetime, transactions: pd.DataFrame, fx: dict) -> pd.DataFrame:
+    def _pnl_pos_apply(positions_dict: dict, start_date: datetime, end_date: datetime, transactions: pd.DataFrame,
+                       fx: dict) -> pd.DataFrame:
         """
         Apply pnl function to values of position dict and return portfolio pnl df
 
@@ -522,5 +533,6 @@ class Portfolio(TimeSeriesInterface):
         :return: pnl df
         """
 
-        pnl = {k: v.daily_pnl(start_date, end_date, transactions.loc[transactions.Ticker == k], fx)['total'] for k, v in positions_dict.items()}
+        pnl = {k: v.daily_pnl(start_date, end_date, transactions.loc[transactions.Ticker == k], fx)['total'] for k, v in
+               positions_dict.items()}
         return pd.DataFrame.from_dict(pnl, orient="columns").fillna(0)

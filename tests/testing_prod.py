@@ -1,13 +1,6 @@
-from datetime import datetime
+import pyportlib.create
 
-import pyportlib as p
+ptf = pyportlib.create.portfolio("questrade_tfsa",
+                                 "CAD")
 
-ptf = p.Portfolio("questrade_tfsa", "CAD")
-# ptf.pct_daily_total_pnl(start_date=datetime(2022, 7, 1),
-#                         end_date=datetime(2022, 7, 5),
-#                         include_cash=True,
-#                         )
-
-# ptf.positions.get("VOO").daily_total_pnl(start_date=datetime(2022, 7, 1),
-#                                             end_date=datetime(2022, 7, 5),
-#                                             fx=ptf._fx)
+print('')

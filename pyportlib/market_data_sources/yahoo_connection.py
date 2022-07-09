@@ -3,8 +3,8 @@ from pandas_datareader import data as pdr
 import yfinance as yfin
 import yahoo_fin.stock_info as yf
 
-from .base_data_connection import BaseDataConnection
-from ..utils import logger
+from pyportlib.market_data_sources.base_data_connection import BaseDataConnection
+from pyportlib.utils import logger
 
 
 class YahooConnection(BaseDataConnection):

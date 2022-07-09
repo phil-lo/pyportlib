@@ -1,7 +1,7 @@
 import json
 from typing import List, Dict
 
-from ..utils import files_utils, logger
+from pyportlib.utils import files_utils, logger
 
 
 class PositionTagging:

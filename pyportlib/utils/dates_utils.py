@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from pandas._libs.tslibs.offsets import BDay
 import warnings
 
-from ..utils import logger
+from pyportlib.utils import logger
 
 warnings.filterwarnings('ignore')
 

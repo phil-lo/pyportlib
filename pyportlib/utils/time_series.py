@@ -5,7 +5,7 @@ from typing import Union, Tuple
 import numpy as np
 import pandas as pd
 
-from . import dates_utils
+from pyportlib.utils import dates_utils
 
 
 class TimeSeriesInterface(ABC):

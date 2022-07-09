@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from ..utils.config_utils import create_default_config
+from pyportlib.utils.config_utils import create_default_config
 
 
 def check_file(directory: str, file: str) -> bool:

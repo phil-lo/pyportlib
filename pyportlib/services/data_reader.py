@@ -1,40 +1,19 @@
 from datetime import datetime
 import pandas as pd
 
-from ..market_data_sources.base_data_connection import BaseDataConnection
-from ..utils import logger, files_utils, config_utils
-from ..market_data_sources.yahoo_connection import YahooConnection
+from pyportlib.market_data_sources.base_data_connection import BaseDataConnection
+from pyportlib.utils import logger, files_utils
 
 
 class DataReader:
     NAME = 'Data Reader'
 
-    def __init__(self):
-        _prices_data_source: BaseDataConnection
-        _statements_data_source: BaseDataConnection
-        self._set_sources()
+    def __init__(self, market_data_source: BaseDataConnection, statements_data_source: BaseDataConnection):
+        self._market_data_source = market_data_source
+        self._statements_data_source = statements_data_source
 
     def __repr__(self):
         return self.NAME
-
-    def _set_sources(self) -> None:
-        """
-        Sets the data source from the config file
-        :return:
-        """
-        prices_data_source = config_utils.fetch_data_sources('market_data')
-        statements_data_source = config_utils.fetch_data_sources('statements')
-        if prices_data_source == 'Yahoo':
-            self._market_data_source = YahooConnection()
-        else:
-            logger.logging.error(f'prices datasource: {prices_data_source} not valid')
-            return None
-
-        if statements_data_source == 'Yahoo':
-            self._statements_data_source = YahooConnection()
-        else:
-            logger.logging.error(f'statements datasource: {statements_data_source} not valid')
-            return None
 
     def read_prices(self, ticker: str) -> pd.Series:
         """

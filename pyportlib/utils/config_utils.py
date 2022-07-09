@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from ..utils import files_utils
+from pyportlib.utils import files_utils
 
 
 def make_config_dir(directory: str) -> None:
@@ -30,15 +30,14 @@ def fetch_tickers_to_ignore() -> List[str]:
     return list(tickers.values())
 
 
-def fetch_data_sources(source_type: str):
+def data_config() -> dict:
     """
     Fetch the datasources specified in the config file. Should not be used by user.
-    :param source_type:
     :return:
     """
     with open(f'{files_utils.get_config_dir()}config.json') as myfile:
         data = json.loads(myfile.read())
-    source = data['datasource'][source_type]
+    source = data['datasource']
 
     return source
 
@@ -53,10 +52,11 @@ def create_default_config(directory: str) -> None:
     if not files_utils.check_file(directory, name):
         default_config = {
             "datasource": {
-                "statements": "Yahoo",
-                "market_data": "Yahoo"
+                "statements": "yahoo",
+                "market_data": "yahoo"
             },
             "ticker_ignore": {
+                "1": ""
             }
         }
         with open(f'{directory}/{name}', 'w', encoding='utf-8') as f:

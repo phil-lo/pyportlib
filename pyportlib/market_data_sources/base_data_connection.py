@@ -1,7 +1,7 @@
 from datetime import datetime
 import pandas as pd
 
-from ..utils import files_utils, dates_utils
+from pyportlib.utils import files_utils, dates_utils
 
 
 class BaseDataConnection:
